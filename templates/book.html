@@ -95,7 +95,11 @@ async function load(date){
     const j=await r.json();
     const list=document.getElementById('slotList');
     if(!j.slots||j.slots.length==0){list.innerHTML='<div style="color:#6b7280;font-size:13px">No slots available</div>';return}
-    list.innerHTML='<div class="slot-grid">'+j.slots.map(s=>`<div class="slot" onclick="chooseSlot('${s}')">${s}</div>`).join('')+'</div>';
+    list.innerHTML='<div class="slot-grid">'+j.slots.map(s=>{
+      let label = typeof s === 'string' ? s : (s.label || s.time || s.display || s.start || s.slot || JSON.stringify(s));
+      let value = typeof s === 'string' ? s : (s.start || s.time || label);
+      return `<div class="slot" onclick="chooseSlot('${value}')">${label}</div>`;
+    }).join('')+'</div>';
   }catch(e){document.getElementById('slotList').innerHTML='Error loading slots';}
 }
 function chooseSlot(s){document.querySelectorAll('.slot').forEach(x=>x.classList.remove('active'));event.target.classList.add('active');document.getElementById('f_slot').value=s;document.getElementById('bookForm').style.display='block'}
