@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a session — {{ studio_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+.duration-wrap{margin-top:14px; padding:12px; background:#111; border-radius:10px; border:1px solid #222}
+.duration-wrap label{font-size:13px; opacity:0.7; display:block; margin-bottom:6px; color:#fff}
+.duration-wrap select{width:100%; padding:10px 12px; border-radius:8px; border:1px solid #333; background:#0a0a0a; color:#fff; font-size:15px}
+.price-hint{font-size:12px; opacity:0.6; margin-top:6px; color:#fff}
+</style>
+</head>
+<body>
+<div class="book-shell">
+
+  <aside class="book-panel">
+    <div class="top">
+      <span class="brand-mark">{{ studio_name }}</span>
+      <div class="location">{{ location }}</div>
+      <p class="tagline">{{ tagline }}</p>
+
+      <div class="meta-list">
+        <div class="meta-row"><span>Session length</span><strong id="leftDurationText">Flexible - Client choice</strong></div>
+        <div class="meta-row"><span>Booking window</span><strong>next {{ days_ahead }} days</strong></div>
+        <div class="meta-row"><span>Confirmation</span><strong>instant</strong></div>
+      </div>
+
+      <div class="duration-wrap">
+        <label for="durationSelect">Choose duration (client decides)</label>
+        <select id="durationSelect">
+          <option value="60">1 Hour</option>
+          <option value="120">2 Hours</option>
+          <option value="180">3 Hours</option>
+          <option value="300">Half Day (5 Hours)</option>
+          <option value="600">Full Day (10 Hours)</option>
+        </select>
+        <div class="price-hint" id="priceHint">You can change duration before picking a slot</div>
+      </div>
+
+    </div>
+    <div class="bottom">
+      Pick a duration, then an open slot on the right. Times already reserved are shown as unavailable — reach out directly if you need something outside these hours.
+    </div>
+  </aside>
+
+  <main class="book-main">
+    <div>
+      <h1>Reserve your time</h1>
+      <div class="sub">First choose how long you need, then a date, then a slot.</div>
+    </div>
+
+    <div class="booking-grid">
+      <div class="calendar-card">
+        <div class="cal-header">
+          <div class="cal-nav">
+            <button id="prevMonth" type="button" aria-label="Previous month">‹</button>
+            <button id="nextMonth" type="button" aria-label="Next month">›</button>
+          </div>
+          <div class="month-label" id="monthLabel"></div>
+          <div style="width:66px"></div>
+        </div>
+        <div class="cal-weekdays">
+          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
+
+      <div class="slots-card">
+        <h2 id="slotsHeading">Select a date</h2>
+        <div id="slotsBody">
+          <div class="empty-note">Pick a date on the calendar to see open times.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none;">
+  <div class="modal-card" id="modalCard"></div>
+</div>
+
+<script>
+const DAYS_AHEAD = {{ days_ahead }};
+const DEFAULT_SESSION = {{ session_length }};
+
+let viewYear, viewMonth;
+let selectedDateStr = null;
+let selectedSlot = null;
+let selectedDuration = parseInt(localStorage.getItem('deven_duration') || DEFAULT_SESSION || 60);
+
+const today = new Date();
+viewYear = today.getFullYear();
+viewMonth = today.getMonth();
+
+const monthLabelEl = document.getElementById('monthLabel');
+const calDaysEl = document.getElementById('calDays');
+const slotsHeading = document.getElementById('slotsHeading');
+const slotsBody = document.getElementById('slotsBody');
+const durationSelect = document.getElementById('durationSelect');
+const leftDurationText = document.getElementById('leftDurationText');
+
+durationSelect.value = selectedDuration;
+updateLeftText();
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function fmtDate(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+function toDateOnly(dt){ return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); }
+
+function updateLeftText(){
+  const map = {60:'1 Hour',120:'2 Hours',180:'3 Hours',300:'Half Day',600:'Full Day'};
+  leftDurationText.textContent = map[selectedDuration] || `${selectedDuration} min`;
+}
+
+function addMinutes(timeStr, mins){
+  const [h,m] = timeStr.split(':').map(Number);
+  let total = h*60 + m + mins;
+  let nh = Math.floor(total/60) % 24;
+  let nm = total % 60;
+  return `${pad(nh)}:${pad(nm)}`;
+}
+
+function renderCalendar(){
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  monthLabelEl.textContent = `${monthNames[viewMonth]} ${viewYear}`;
+
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+  const todayOnly = toDateOnly(new Date());
+  const maxDate = new Date(todayOnly);
+  maxDate.setDate(maxDate.getDate() + DAYS_AHEAD);
+
+  calDaysEl.innerHTML = '';
+
+  for(let i=0;i<startWeekday;i++){
+    const cell = document.createElement('div');
+    cell.className = 'cal-day empty';
+    calDaysEl.appendChild(cell);
+  }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const cellDate = new Date(viewYear, viewMonth, d);
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    cell.textContent = d;
+
+    const dateStr = fmtDate(viewYear, viewMonth, d);
+    const disabled = cellDate < todayOnly || cellDate > maxDate;
+
+    if(disabled){
+      cell.classList.add('disabled');
+    } else {
+      cell.addEventListener('click', () => selectDate(dateStr, cell));
+    }
+    if(cellDate.getTime() === todayOnly.getTime()){
+      cell.classList.add('today');
+    }
+    if(dateStr === selectedDateStr){
+      cell.classList.add('selected');
+    }
+    calDaysEl.appendChild(cell);
+  }
+  document.getElementById('prevMonth').disabled = (viewYear === todayOnly.getFullYear() && viewMonth === todayOnly.getMonth());
+}
+
+function selectDate(dateStr, cellEl){
+  selectedDateStr = dateStr;
+  selectedSlot = null;
+  document.querySelectorAll('.cal-day.selected').forEach(el => el.classList.remove('selected'));
+  if(cellEl) cellEl.classList.add('selected');
+  loadSlots(dateStr);
+}
+
+function loadSlots(dateStr){
+  const niceDate = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+  slotsHeading.textContent = `${niceDate} · ${selectedDuration/60}h slot`;
+  slotsBody.innerHTML = '<div class="empty-note">Loading times…</div>';
+
+  fetch(`/api/availability?date=${dateStr}&duration=${selectedDuration}`)
+    .then(r => r.json())
+    .then(data => {
+      if(!data.bookable || !data.slots.length){
+        slotsBody.innerHTML = '<div class="empty-note">No sessions available this day for this duration.</div>';
+        return;
+      }
+      const grid = document.createElement('div');
+      grid.className = 'slots-grid';
+      data.slots.forEach(slot => {
+        // slot.start comes from server, but we recalculate end based on selectedDuration for client choice
+        const end = addMinutes(slot.start, selectedDuration);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'slot-btn' + (slot.available ? '' : ' taken');
+        btn.textContent = `${formatTime(slot.start)} - ${formatTime(end)}`;
+        if(slot.available){
+          btn.addEventListener('click', () => openBookingModal(dateStr, {start: slot.start, end: end}, niceDate));
+        } else {
+          btn.disabled = true;
+        }
+        grid.appendChild(btn);
+      });
+      slotsBody.innerHTML = '';
+      slotsBody.appendChild(grid);
+    })
+    .catch(() => {
+      slotsBody.innerHTML = '<div class="empty-note">Couldn\'t load times. Please refresh.</div>';
+    });
+}
+
+function formatTime(hhmm){
+  const [h,m] = hhmm.split(':').map(Number);
+  const d = new Date(); d.setHours(h,m,0,0);
+  return d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+}
+
+const overlay = document.getElementById('modalOverlay');
+const modalCard = document.getElementById('modalCard');
+
+function closeModal(){ overlay.style.display = 'none'; modalCard.innerHTML = ''; }
+overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+
+function openBookingModal(dateStr, slot, niceDate){
+  modalCard.innerHTML = `
+    <h3>Confirm your session</h3>
+    <div class="slot-summary">${niceDate} · ${formatTime(slot.start)} – ${formatTime(slot.end)} (${selectedDuration/60} hour${selectedDuration>60?'s':''})</div>
+    <form id="bookForm">
+      <div class="field"><label>Full name</label><input type="text" name="name" required></div>
+      <div class="field"><label>Email</label><input type="email" name="email" required></div>
+      <div class="field"><label>Phone (optional)</label><input type="tel" name="phone"></div>
+      <div class="field"><label>What are you shooting / recording? (optional)</label><textarea name="notes"></textarea></div>
+      <input type="hidden" name="duration" value="${selectedDuration}">
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Confirm booking</button>
+        <button type="button" class="btn btn-ghost" id="cancelModalBtn">Cancel</button>
+      </div>
+      <div class="form-error" id="formError" style="display:none;"></div>
+    </form>
+  `;
+  overlay.style.display = 'flex';
+  document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+  document.getElementById('bookForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitBooking(dateStr, slot, niceDate, e.target);
+  });
+}
+
+function submitBooking(dateStr, slot, niceDate, formEl){
+  const submitBtn = formEl.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Booking…';
+  const errorEl = document.getElementById('formError');
+  errorEl.style.display = 'none';
+
+  const payload = {
+    date: dateStr,
+    start: slot.start,
+    end: slot.end,
+    duration: selectedDuration,
+    name: formEl.name.value,
+    email: formEl.email.value,
+    phone: formEl.phone.value,
+    notes: formEl.notes.value,
+  };
+
+  fetch('/api/book', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(async r => {
+    const data = await r.json();
+    if(!r.ok){ throw new Error(data.error || 'Something went wrong.'); }
+    showConfirmation(niceDate, slot);
+    loadSlots(dateStr);
+  })
+  .catch(err => {
+    errorEl.textContent = err.message;
+    errorEl.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Confirm booking';
+  });
+}
+
+function showConfirmation(niceDate, slot){
+  modalCard.innerHTML = `
+    <div class="confirm-card">
+      <div class="mark">✓</div>
+      <h3>You're booked</h3>
+      <p>${niceDate}<br>${formatTime(slot.start)} – ${formatTime(slot.end)}<br><small>${selectedDuration/60} hour(s)</small></p>
+      <div class="modal-actions" style="justify-content:center;">
+        <button type="button" class="btn btn-primary" id="doneBtn">Done</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('doneBtn').addEventListener('click', closeModal);
+}
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+  renderCalendar();
+});
+
+durationSelect.addEventListener('change', () => {
+  selectedDuration = parseInt(durationSelect.value);
+  localStorage.setItem('deven_duration', selectedDuration);
+  updateLeftText();
+  if(selectedDateStr) loadSlots(selectedDateStr);
+});
+
+renderCalendar();
+</script>
+</body>
+</html>

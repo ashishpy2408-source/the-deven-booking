@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner login — {{ studio_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="login-shell">
+  <div class="login-card">
+    <span class="brand-mark">{{ studio_name }}</span>
+    <div class="sub">Owner dashboard — bookings are only visible here.</div>
+    <form method="post">
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" autofocus required>
+      </div>
+      {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:6px;">Log in</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>
