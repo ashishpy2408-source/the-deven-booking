@@ -3,14 +3,9 @@
 <style>.wrap{max-width:400px;margin:80px auto;padding:20px}.card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:24px}.input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:10px;margin-top:12px}.btn{width:100%;background:#0e7a8c;color:white;border:none;padding:12px;border-radius:12px;font-weight:700;margin-top:16px;cursor:pointer}</style>
 {% endblock %}
 {% block content %}
-<div class="wrap">
-<div class="card">
-<h2 style="font-family:Fraunces,serif">Owner Login</h2>
+<div class="wrap"><div class="card">
+<h2>Owner Login</h2>
 {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-<form method="POST">
-<input class="input" type="password" name="password" placeholder="Enter Admin Password" required>
-<button class="btn" type="submit">Login</button>
-</form>
-</div>
-</div>
+<form method="POST"><input class="input" type="password" name="password" placeholder="Password: Deven@1986" required><button class="btn" type="submit">Login</button></form>
+</div></div>
 {% endblock %}
