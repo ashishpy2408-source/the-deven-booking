@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rules - {{ studio_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+body{background:#0a0a0a;color:#fff;font-family:sans-serif;padding:20px}
+.container{max-width:900px;margin:auto}
+a.btn{display:inline-block;padding:10px 18px;background:#fff;color:#000;border-radius:8px;text-decoration:none;margin-bottom:20px}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:15px}
+.gallery-grid img{width:100%;height:180px;object-fit:cover;border-radius:10px;border:1px solid #333}
+.rules-box{background:#111;padding:20px;border-radius:12px;border:1px solid #222;margin:20px 0}
+.rules-box li{margin-bottom:8px;opacity:0.9}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/" class="btn">← Back to Booking</a>
+<h1>📜 {{ studio_name }} - Studio Rules</h1>
+
+<div class="rules-box">
+<h3>General Rules</h3>
+<ul>
+<li>🚭 No smoking inside studio & meeting room</li>
+<li>🧹 Please leave space clean - cleaning charge ₹500 if dirty</li>
+<li>⏰ Overtime charged extra - inform before</li>
+<li>🍕 Outside food allowed for meeting room only</li>
+<li>📸 Damage to lights/backdrop/equipment will be charged</li>
+<li>👟 No shoes on backdrop / cyclorama</li>
+<li>🎵 Keep volume low after 9 PM</li>
+</ul>
+<h3 style="margin-top:20px">Meeting Room - 6-8 People</h3>
+<ul>
+<li>💼 Ideal for client meetings, interviews, workshops</li>
+<li>📶 High speed WiFi + Whiteboard + AC</li>
+<li>☕ Tea/Coffee can be arranged</li>
+</ul>
+</div>
+
+<h2>Gallery - Auto Loads From Your Folders</h2>
+<p style="opacity:0.6">Upload photos to: static/images/studio/ , meeting/ , rules/</p>
+
+{% if gallery.studio %}
+<h3>📸 Daylight Studio</h3>
+<div class="gallery-grid">
+{% for img in gallery.studio %}<img src="{{ url_for('static', filename=img) }}">{% endfor %}
+</div>
+{% endif %}
+
+{% if gallery.meeting %}
+<h3 style="margin-top:25px">💼 Meeting Room</h3>
+<div class="gallery-grid">
+{% for img in gallery.meeting %}<img src="{{ url_for('static', filename=img) }}">{% endfor %}
+</div>
+{% endif %}
+
+{% if gallery.rules %}
+<h3 style="margin-top:25px">📜 Studio Rules & Setup</h3>
+<div class="gallery-grid">
+{% for img in gallery.rules %}<img src="{{ url_for('static', filename=img) }}">{% endfor %}
+</div>
+{% endif %}
+
+{% if not gallery.studio and not gallery.meeting and not gallery.rules %}
+<p style="margin-top:20px; opacity:0.5; border:1px dashed #333; padding:20px; border-radius:10px; text-align:center">
+No images yet.<br>To add: Go to static folder → create images folder → inside create studio, meeting, rules folders → put JPGs there.
+</p>
+{% endif %}
+
+</div>
+</body>
+</html>
