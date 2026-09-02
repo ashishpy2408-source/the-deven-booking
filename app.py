@@ -8,9 +8,6 @@ from datetime import datetime, date, timedelta, time as dtime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, g, flash
 
-# ---------------------------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------------------------
 STUDIO_NAME = "The Deven"
 STUDIO_TAGLINE = "A daylight studio for photo, film, and sound."
 STUDIO_LOCATION = "Raipur, Chhattisgarh"
@@ -21,10 +18,10 @@ BOOKABLE_DAYS_AHEAD = 60
 CLOSED_WEEKDAYS = set()
 ALLOWED_DURATIONS = [60, 120, 180, 300, 600]
 
-# PRICE HATA DIYA
+# PRICE KHALI RAKHA HAI - ERROR NAHI AYEGA, DIKHEGA BHI NAHI
 RESOURCES = {
-    "daylight_studio": {"name": "Daylight Studio", "icon": "📸", "desc": "Photo/Film/Sound"},
-    "meeting_room": {"name": "Meeting Room", "icon": "💼", "desc": "Meetings/Podcast"}
+    "daylight_studio": {"name": "Daylight Studio", "icon": "📸", "price": "", "desc": "Photo/Film/Sound"},
+    "meeting_room": {"name": "Meeting Room", "icon": "💼", "price": "", "desc": "Meetings/Podcast"}
 }
 
 ADMIN_PASSWORD = os.environ.get("DEVEN_ADMIN_PASSWORD", "changeme123")
@@ -32,9 +29,6 @@ SECRET_KEY = os.environ.get("DEVEN_SECRET_KEY", secrets.token_hex(32))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "the_deven.db")
 
-# ---------------------------------------------------------------------------
-# App + DB
-# ---------------------------------------------------------------------------
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
 
@@ -104,13 +98,9 @@ def get_gallery_images():
         pass
     return gallery
 
-# FIX: Render pe auto init
 with app.app_context():
     init_db()
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def generate_day_slots(duration_minutes=60):
     slots = []
     step = timedelta(minutes=60)
@@ -148,9 +138,6 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 @app.route("/")
 def book_page():
     return render_template("book.html",
