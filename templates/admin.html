@@ -1,165 +1,39 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Owner dashboard — {{ studio_name }}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<div class="admin-shell">
-  <div class="admin-topbar">
-    <div>
-      <span class="brand-mark">{{ studio_name }}</span>
-      <div class="sub">Owner dashboard</div>
-    </div>
-    <a class="logout" href="{{ url_for('admin_logout') }}">Log out</a>
-  </div>
+{% extends "base.html" %}
+{% block head %}
+<style>
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+h1{font-family:Fraunces,serif;font-size:32px}
+table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;margin-top:16px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}
+th{background:#0e7a8c;color:white}
+tr:hover{background:#f9fafb}
+.badge{background:#e6f4f6;color:#0e7a8c;padding:4px 8px;border-radius:6px;font-size:12px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="wrap">
+<h1>Admin - Bookings</h1>
+<p style="color:#6b7280">Total bookings: {{ bookings|length }}</p>
 
-  <div class="admin-body">
+{% if bookings %}
+<table>
+<tr><th>Date</th><th>Space</th><th>Slot</th><th>Name</th><th>Phone</th><th>Email</th></tr>
+{% for b in bookings %}
+<tr>
+<td>{{ b.date }}</td>
+<td><span class="badge">{{ b.space }}</span></td>
+<td>{{ b.start }} ({{ b.duration }}hr)</td>
+<td>{{ b.name }}</td>
+<td>{{ b.phone }}</td>
+<td>{{ b.email }}</td>
+</tr>
+{% endfor %}
+</table>
+{% else %}
+<p style="margin-top:20px;color:#6b7280">Abhi koi booking nahi hai. Booking page se test booking karo.</p>
+{% endif %}
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <div>
-      <div class="section-title">Your booking link</div>
-      <div class="link-box">
-        <code id="bookingLink">{{ booking_link }}</code>
-        <button class="mini-btn" onclick="navigator.clipboard.writeText(document.getElementById('bookingLink').textContent)">Copy</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="section-title">Upcoming bookings</div>
-      <div class="table-card">
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Time</th><th>Name</th><th>Contact</th><th>Notes</th><th></th></tr>
-          </thead>
-          <tbody>
-            {% for b in upcoming %}
-            <tr>
-              <td>{{ b['date'] }}</td>
-              <td>{{ b['start_time'] }}–{{ b['end_time'] }}</td>
-              <td>{{ b['name'] }}</td>
-              <td>{{ b['email'] }}{% if b['phone'] %}<br>{{ b['phone'] }}{% endif %}</td>
-              <td class="notes">{{ b['notes'] or '—' }}</td>
-              <td>
-                <form method="post" action="{{ url_for('admin_cancel_booking', booking_id=b['id']) }}" onsubmit="return confirm('Cancel this booking?');">
-                  <button type="submit" class="mini-btn">Cancel</button>
-                </form>
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="6" class="empty-cell">No upcoming bookings yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div>
-      <div class="section-title">Block off time</div>
-      <form class="block-form" method="post" action="{{ url_for('admin_block_slot') }}">
-        <div class="field">
-          <label>Date</label>
-          <input type="date" name="date" required>
-        </div>
-        <div class="field">
-          <label>Start</label>
-          <input type="time" name="start" required>
-        </div>
-        <div class="field">
-          <label>End</label>
-          <input type="time" name="end" required>
-        </div>
-        <div class="field" style="flex:2;">
-          <label>Reason (only you see this)</label>
-          <input type="text" name="reason" placeholder="e.g. maintenance, personal shoot">
-        </div>
-        <button type="submit" class="btn btn-primary">Block</button>
-      </form>
-    </div>
-
-    {% if blocked %}
-    <div>
-      <div class="section-title">Blocked time</div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th>Date</th><th>Time</th><th>Reason</th><th></th></tr></thead>
-          <tbody>
-            {% for blk in blocked %}
-            <tr>
-              <td>{{ blk['date'] }}</td>
-              <td>{{ blk['start_time'] }}–{{ blk['end_time'] }}</td>
-              <td>{{ blk['reason'] or '—' }}</td>
-              <td>
-                <form method="post" action="{{ url_for('admin_unblock_slot', block_id=blk['id']) }}">
-                  <button type="submit" class="mini-btn">Remove</button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
-    <div>
-      <div class="section-title">Past bookings</div>
-      <div class="table-card">
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Time</th><th>Name</th><th>Contact</th><th>Notes</th></tr>
-          </thead>
-          <tbody>
-            {% for b in past %}
-            <tr>
-              <td>{{ b['date'] }}</td>
-              <td>{{ b['start_time'] }}–{{ b['end_time'] }}</td>
-              <td>{{ b['name'] }}</td>
-              <td>{{ b['email'] }}{% if b['phone'] %}<br>{{ b['phone'] }}{% endif %}</td>
-              <td class="notes">{{ b['notes'] or '—' }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="empty-cell">Nothing yet.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {% if cancelled %}
-    <div>
-      <div class="section-title">Cancelled</div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th>Date</th><th>Time</th><th>Name</th><th>Contact</th><th></th></tr></thead>
-          <tbody>
-            {% for b in cancelled %}
-            <tr>
-              <td>{{ b['date'] }}</td>
-              <td>{{ b['start_time'] }}–{{ b['end_time'] }}</td>
-              <td>{{ b['name'] }}</td>
-              <td>{{ b['email'] }}</td>
-              <td>
-                <form method="post" action="{{ url_for('admin_delete_booking', booking_id=b['id']) }}" onsubmit="return confirm('Permanently delete this record?');">
-                  <button type="submit" class="mini-btn">Delete</button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endif %}
-
-  </div>
+<br><br>
+<a href="/book" style="color:#0e7a8c;font-weight:600">← Back to Booking</a>
 </div>
-</body>
-</html>
+{% endblock %}
