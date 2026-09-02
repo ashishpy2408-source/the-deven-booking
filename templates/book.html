@@ -1,59 +1,46 @@
 {% extends "base.html" %}
 {% block head %}
 <style>
-  .wrap{max-width:1100px;margin:0 auto;padding:20px}
-  .right h1{font-family:Fraunces,serif;font-size:44px;margin:0;line-height:1}
-  .sub{color:#6b7280;margin:8px 0 18px;font-size:14px}
-  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-  .controls select{border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;background:white;font-size:14px;min-width:180px}
-  .grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
-  .card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:16px}
-  .cal-head{display:flex;align-items:center;gap:8px;font-family:Fraunces,serif;font-weight:600;font-size:18px;margin-bottom:10px}
-  .cal-head button{border:1px solid #e5e7eb;background:white;border-radius:8px;width:32px;height:32px;cursor:pointer}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
-  .dow{font-size:11px;color:#6b7280;padding:4px}
-  .day{padding:10px 0;border-radius:10px;cursor:pointer;font-size:14px;border:1px solid transparent}
-  .day:hover{background:#e6f4f6;color:#0e7a8c}
-  .day.selected{background:#0e7a8c;color:white}
-  .day.disabled{color:#d1d5db;pointer-events:none}
-  .slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .slot{border:1.5px solid #e5e7eb;border-radius:10px;padding:10px;font-weight:600;font-size:13px;cursor:pointer;text-align:center}
-  .slot:hover{border-color:#0e7a8c;color:#0e7a8c}
-  .slot.active{background:#0e7a8c;color:white;border-color:#0e7a8c}
-  .input{width:100%;padding:11px 12px;border:1px solid #e5e7eb;border-radius:10px;margin-top:8px;font-size:14px}
-  .btn{width:100%;background:#0e7a8c;color:white;border:none;padding:12px;border-radius:12px;font-weight:700;margin-top:12px;cursor:pointer}
-  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+.right h1{font-family:Fraunces,serif;font-size:44px;margin:0}
+.sub{color:#6b7280;margin:8px 0 18px;font-size:14px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.controls select{border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;background:white;min-width:180px}
+.grid2{display:grid;grid-template-columns:1.2fr.8fr;gap:20px}
+.card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:16px}
+.cal-head{display:flex;align-items:center;gap:8px;font-weight:600;font-size:18px;margin-bottom:10px}
+.cal-head button{border:1px solid #e5e7eb;background:white;border-radius:8px;width:32px;height:32px;cursor:pointer}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.dow{font-size:11px;color:#6b7280;padding:4px}
+.day{padding:10px 0;border-radius:10px;cursor:pointer;font-size:14px}
+.day:hover{background:#e6f4f6;color:#0e7a8c}
+.day.selected{background:#0e7a8c;color:white}
+.day.disabled{color:#d1d5db;pointer-events:none}
+.slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.slot{border:1.5px solid #e5e7eb;border-radius:10px;padding:10px;font-weight:600;font-size:13px;cursor:pointer;text-align:center}
+.slot.active{background:#0e7a8c;color:white;border-color:#0e7a8c}
+.input{width:100%;padding:11px;border:1px solid #e5e7eb;border-radius:10px;margin-top:8px}
+.btn{width:100%;background:#0e7a8c;color:white;border:none;padding:12px;border-radius:12px;font-weight:700;margin-top:12px;cursor:pointer}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
 </style>
 {% endblock %}
 {% block content %}
 <div class="wrap">
-  <div class="right">
-    <h1>Reserve your time</h1>
-    <div class="sub">Choose Space → Duration → Date → Slot.</div>
-    <div class="controls">
-      <select id="spaceSel"><option value="Daylight Studio">Daylight Studio</option><option value="Meeting Room">Meeting Room</option></select>
-      <select id="durSel"><option value="1">1 Hour</option><option value="2">2 Hours</option><option value="3">3 Hours</option></select>
-    </div>
-    <div class="grid2">
-      <div class="card"><div class="cal-head"><button id="prev"><</button><button id="next">></button><span id="monthLabel"></span></div><div class="cal-grid" id="calGrid"></div></div>
-      <div class="card">
-        <div id="slotTitle" style="font-weight:600">Select a date</div>
-        <div id="slotHint" style="color:#6b7280;font-size:13px;margin-top:4px">Please select a date to see available slots</div>
-        <div id="slotList" style="margin-top:12px"></div>
-        <form id="bookForm" method="POST" action="/book" style="display:none">
-          <input type="hidden" name="space" id="f_space">
-          <input type="hidden" name="duration" id="f_duration">
-          <input type="hidden" name="date" id="f_date">
-          <input type="hidden" name="slot" id="f_slot">
-          <input class="input" name="name" required placeholder="Your name">
-          <input class="input" name="phone" required placeholder="Phone">
-          <input class="input" name="email" required type="email" placeholder="Email address">
-          <button class="btn" type="submit">Confirm Booking</button>
-        </form>
-      </div>
-    </div>
-  </div>
+<h1>Reserve your time</h1><div class="sub">Choose Space → Duration → Date → Slot.</div>
+<div class="controls">
+<select id="spaceSel"><option>Daylight Studio</option><option>Meeting Room</option></select>
+<select id="durSel"><option value="1">1 Hour</option><option value="2">2 Hours</option><option value="3">3 Hours</option></select>
 </div>
+<div class="grid2">
+<div class="card"><div class="cal-head"><button id="prev"><</button><button id="next">></button><span id="monthLabel"></span></div><div class="cal-grid" id="calGrid"></div></div>
+<div class="card">
+<div id="slotTitle" style="font-weight:600">Select a date</div><div id="slotHint" style="color:#6b7280;font-size:13px;margin-top:4px">Please select a date</div>
+<div id="slotList" style="margin-top:12px"></div>
+<form id="bookForm" method="POST" action="/book" style="display:none">
+<input type="hidden" name="space" id="f_space"><input type="hidden" name="duration" id="f_duration"><input type="hidden" name="date" id="f_date"><input type="hidden" name="slot" id="f_slot">
+<input class="input" name="name" required placeholder="Your name"><input class="input" name="phone" required placeholder="Phone"><input class="input" name="email" required type="email" placeholder="Email"><button class="btn" type="submit">Confirm Booking</button>
+</form>
+</div></div></div>
 <script>
 let cur=new Date();cur.setDate(1);
 const grid=document.getElementById('calGrid'), label=document.getElementById('monthLabel');
@@ -64,37 +51,29 @@ function render(){
   ["SU","MO","TU","WE","TH","FR","SA"].forEach(d=>{let e=document.createElement('div');e.className='dow';e.textContent=d;grid.appendChild(e)});
   let first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
   for(let i=0;i<first;i++) grid.appendChild(document.createElement('div'));
-  for(let d=1;d<=days;d++){let el=document.createElement('div');el.className='day';el.textContent=d;let dt=new Date(y,m,d);if(dt<new Date().setHours(0,0,0,0))el.classList.add('disabled');else el.onclick=()=>pickDate(y,m,d,el);grid.appendChild(el)}
+  for(let d=1;d<=days;d++){let el=document.createElement('div');el.className='day';el.textContent=d;let dt=new Date(y,m,d);if(dt<new Date().setHours(0,0,0,0))el.classList.add('disabled');else el.onclick=()=>pick(y,m,d,el);grid.appendChild(el)}
 }
-function pickDate(y,m,d,el){
+function pick(y,m,d,el){
   document.querySelectorAll('.day').forEach(x=>x.classList.remove('selected'));el.classList.add('selected');
   const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  document.getElementById('f_date').value=ds;
-  document.getElementById('f_space').value=document.getElementById('spaceSel').value;
-  document.getElementById('f_duration').value=document.getElementById('durSel').value;
+  document.getElementById('f_date').value=ds;document.getElementById('f_space').value=document.getElementById('spaceSel').value;document.getElementById('f_duration').value=document.getElementById('durSel').value;
   document.getElementById('slotTitle').textContent=new Date(y,m,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  document.getElementById('slotHint').textContent='Available slots:';
-  load(ds);
-}
-function fmt(s,dur){
-  let st=typeof s==='string'?s:(s.start||s.time||s.value);
-  let h=parseInt(st.split(':')[0]); return `${st} - ${String(h+parseInt(dur)).padStart(2,'0')}:00`;
+  document.getElementById('slotHint').textContent='Available slots:';load(ds);
 }
 async function load(date){
   const space=document.getElementById('spaceSel').value, dur=document.getElementById('durSel').value;
   try{
     const r=await fetch(`/api/slots?date=${date}&space=${encodeURIComponent(space)}&duration=${dur}`);
-    const j=await r.json();
-    const list=document.getElementById('slotList');
-    if(!j.slots||j.slots.length==0){list.innerHTML='<div style="color:#6b7280;font-size:13px">No slots</div>';return}
+    const j=await r.json();const list=document.getElementById('slotList');
+    if(!j.slots||j.slots.length==0){list.innerHTML='No slots';return}
     list.innerHTML='<div class="slot-grid">'+j.slots.map(s=>{
-      let sv=typeof s==='string'?s:(s.start||s.time||s.value); return `<div class="slot" onclick="chooseSlot('${sv}')">${fmt(s,dur)}</div>`;
+      let sv=s.start; let lbl=s.label; return `<div class="slot" onclick="chooseSlot('${sv}')">${lbl}</div>`;
     }).join('')+'</div>';
   }catch(e){document.getElementById('slotList').innerHTML='Error';}
 }
 function chooseSlot(s){document.querySelectorAll('.slot').forEach(x=>x.classList.remove('active'));event.target.classList.add('active');document.getElementById('f_slot').value=s;document.getElementById('bookForm').style.display='block'}
 document.getElementById('prev').onclick=()=>{cur.setMonth(cur.getMonth()-1);render()};document.getElementById('next').onclick=()=>{cur.setMonth(cur.getMonth()+1);render()};
-document.getElementById('spaceSel').onchange=()=>{let d=document.getElementById('f_date').value; if(d) load(d)};document.getElementById('durSel').onchange=()=>{let d=document.getElementById('f_date').value; if(d) load(d)};
+document.getElementById('spaceSel').onchange=()=>{let d=document.getElementById('f_date').value;if(d) load(d)};document.getElementById('durSel').onchange=()=>{let d=document.getElementById('f_date').value;if(d) load(d)};
 render();
 </script>
 {% endblock %}
