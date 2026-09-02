@@ -22,7 +22,6 @@
   .slot.active{background:#0e7a8c;color:white;border-color:#0e7a8c}
   .input{width:100%;padding:11px 12px;border:1px solid #e5e7eb;border-radius:10px;margin-top:8px;font-size:14px}
   .btn{width:100%;background:#0e7a8c;color:white;border:none;padding:12px;border-radius:12px;font-weight:700;margin-top:12px;cursor:pointer}
-  .btn:hover{background:#0a5c6b}
   @media(max-width:900px){.grid2{grid-template-columns:1fr}}
 </style>
 {% endblock %}
@@ -32,26 +31,16 @@
     <h1>Reserve your time</h1>
     <div class="sub">Choose Space → Duration → Date → Slot.</div>
     <div class="controls">
-      <select id="spaceSel">
-        <option value="Daylight Studio">Daylight Studio</option>
-        <option value="Meeting Room">Meeting Room</option>
-      </select>
-      <select id="durSel">
-        <option value="1">1 Hour</option>
-        <option value="2">2 Hours</option>
-        <option value="3">3 Hours</option>
-      </select>
+      <select id="spaceSel"><option value="Daylight Studio">Daylight Studio</option><option value="Meeting Room">Meeting Room</option></select>
+      <select id="durSel"><option value="1">1 Hour</option><option value="2">2 Hours</option><option value="3">3 Hours</option></select>
     </div>
     <div class="grid2">
-      <div class="card">
-        <div class="cal-head"><button id="prev"><</button><button id="next">></button><span id="monthLabel"></span></div>
-        <div class="cal-grid" id="calGrid"></div>
-      </div>
+      <div class="card"><div class="cal-head"><button id="prev"><</button><button id="next">></button><span id="monthLabel"></span></div><div class="cal-grid" id="calGrid"></div></div>
       <div class="card">
         <div id="slotTitle" style="font-weight:600">Select a date</div>
         <div id="slotHint" style="color:#6b7280;font-size:13px;margin-top:4px">Please select a date to see available slots</div>
         <div id="slotList" style="margin-top:12px"></div>
-        <form id="bookForm" method="POST" style="display:none">
+        <form id="bookForm" method="POST" action="/book" style="display:none">
           <input type="hidden" name="space" id="f_space">
           <input type="hidden" name="duration" id="f_duration">
           <input type="hidden" name="date" id="f_date">
@@ -87,14 +76,9 @@ function pickDate(y,m,d,el){
   document.getElementById('slotHint').textContent='Available slots:';
   load(ds);
 }
-function formatSlot(s, duration){
-  // s can be string "09:00" or object
-  let start = typeof s === 'string' ? s : (s.start || s.time || s.value || s.slot);
-  if(!start) return typeof s === 'string' ? s : (s.label || JSON.stringify(s));
-  let [h,m] = start.split(':').map(Number);
-  let endH = h + parseInt(duration);
-  let end = `${String(endH).padStart(2,'0')}:${String(m||0).padStart(2,'0')}`;
-  return `${start} - ${end}`;
+function fmt(s,dur){
+  let st=typeof s==='string'?s:(s.start||s.time||s.value);
+  let h=parseInt(st.split(':')[0]); return `${st} - ${String(h+parseInt(dur)).padStart(2,'0')}:00`;
 }
 async function load(date){
   const space=document.getElementById('spaceSel').value, dur=document.getElementById('durSel').value;
@@ -102,13 +86,11 @@ async function load(date){
     const r=await fetch(`/api/slots?date=${date}&space=${encodeURIComponent(space)}&duration=${dur}`);
     const j=await r.json();
     const list=document.getElementById('slotList');
-    if(!j.slots||j.slots.length==0){list.innerHTML='<div style="color:#6b7280;font-size:13px">No slots available</div>';return}
+    if(!j.slots||j.slots.length==0){list.innerHTML='<div style="color:#6b7280;font-size:13px">No slots</div>';return}
     list.innerHTML='<div class="slot-grid">'+j.slots.map(s=>{
-      let startVal = typeof s === 'string' ? s : (s.start || s.time || s.value || s.slot);
-      let label = formatSlot(s, dur);
-      return `<div class="slot" onclick="chooseSlot('${startVal}')">${label}</div>`;
+      let sv=typeof s==='string'?s:(s.start||s.time||s.value); return `<div class="slot" onclick="chooseSlot('${sv}')">${fmt(s,dur)}</div>`;
     }).join('')+'</div>';
-  }catch(e){document.getElementById('slotList').innerHTML='Error loading slots';}
+  }catch(e){document.getElementById('slotList').innerHTML='Error';}
 }
 function chooseSlot(s){document.querySelectorAll('.slot').forEach(x=>x.classList.remove('active'));event.target.classList.add('active');document.getElementById('f_slot').value=s;document.getElementById('bookForm').style.display='block'}
 document.getElementById('prev').onclick=()=>{cur.setMonth(cur.getMonth()-1);render()};document.getElementById('next').onclick=()=>{cur.setMonth(cur.getMonth()+1);render()};
