@@ -8,7 +8,7 @@ app.secret_key = "the-deven-final-2026"
 BOOK_FILE = "bookings.json"
 SPACES = ["Daylight Studio", "Meeting Room"]
 START, END = 9, 21
-ADMIN_PASS = "Deven@123" # <-- Yahi password hai
+ADMIN_PASS = "Deven@1986" # <-- Yahi password hai
 
 def load_bookings():
     if os.path.exists(BOOK_FILE):
