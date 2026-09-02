@@ -1,17 +1,11 @@
 {% extends "base.html" %}
 {% block head %}
 <style>
-  .wrap{max-width:1250px;margin:0 auto;padding:20px;display:grid;grid-template-columns:300px 1fr;gap:20px}
-  .left{background:#0e7a8c;color:white;border-radius:20px;padding:24px;height:fit-content}
-  .left h2{font-family:Fraunces,serif;margin:0 0 10px;font-size:22px}
-  .left .muted{opacity:.9;font-size:13px;line-height:1.6}
-  .pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:999px;font-size:12px;margin-top:10px}
-  /* Right */
-  .right{}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px}
   .right h1{font-family:Fraunces,serif;font-size:44px;margin:0;line-height:1}
   .sub{color:#6b7280;margin:8px 0 18px;font-size:14px}
   .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-  .controls select{border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;background:white;font-size:14px}
+  .controls select{border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;background:white;font-size:14px;min-width:180px}
   .grid2{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
   .card{background:white;border:1px solid #e5e7eb;border-radius:18px;padding:16px}
   .cal-head{display:flex;align-items:center;gap:8px;font-family:Fraunces,serif;font-weight:600;font-size:18px;margin-bottom:10px}
@@ -28,25 +22,24 @@
   .slot.active{background:#0e7a8c;color:white;border-color:#0e7a8c}
   .btn{width:100%;background:#0e7a8c;color:white;border:none;padding:12px;border-radius:12px;font-weight:700;margin-top:12px;cursor:pointer}
   .btn:hover{background:#0a5c6b}
-  @media(max-width:900px){.wrap{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
 </style>
 {% endblock %}
 {% block content %}
 <div class="wrap">
-  <div class="left">
-    <h2>Daylight Studio</h2>
-    <div class="muted">Natural light, 500 sqft<br>City view backdrop</div>
-    <div class="pill">✓ 1 / 2 / 3 Hours</div>
-    <div class="pill">✓ 60 days advance booking</div>
-    <div class="pill">✓ Instant confirmation</div>
-    <div style="margin-top:18px;font-size:13px;opacity:.9">* Price removed - on request</div>
-  </div>
   <div class="right">
     <h1>Reserve your time</h1>
     <div class="sub">Choose Space → Duration → Date → Slot.</div>
     <div class="controls">
-      <select id="spaceSel"><option>Daylight Studio</option><option>Podcast Room</option></select>
-      <select id="durSel"><option value="1">1 Hour</option><option value="2">2 Hours</option><option value="3">3 Hours</option></select>
+      <select id="spaceSel">
+        <option value="Daylight Studio">Daylight Studio</option>
+        <option value="Meeting Room">Meeting Room</option>
+      </select>
+      <select id="durSel">
+        <option value="1">1 Hour</option>
+        <option value="2">2 Hours</option>
+        <option value="3">3 Hours</option>
+      </select>
     </div>
     <div class="grid2">
       <div class="card">
