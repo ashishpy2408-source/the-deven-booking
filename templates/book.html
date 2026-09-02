@@ -1,118 +1,143 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Book a session — {{ studio_name }}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<style>
-.duration-wrap{margin-top:14px; padding:12px; background:#111; border-radius:10px; border:1px solid #222}
-.duration-wrap label{font-size:13px; opacity:0.7; display:block; margin-bottom:6px; color:#fff}
-.duration-wrap select{width:100%; padding:10px 12px; border-radius:8px; border:1px solid #333; background:#0a0a0a; color:#fff}
-.price-hint{font-size:12px; opacity:0.6; margin-top:6px; color:#fff}
-.resource-wrap{margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.resource-card{padding:12px; border-radius:10px; border:1px solid #333; background:#0a0a0a; cursor:pointer; text-align:left}
-.resource-card.active{border-color:#fff; background:#1a1a1a}
-.r-name{font-size:14px; font-weight:600; color:#fff; margin-top:4px}
-.r-price{font-size:11px; opacity:0.6; color:#fff}
-.gallery-section{margin-top:40px; border-top:1px solid #222; padding-top:20px}
-.gallery-tabs{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap}
-.gallery-tabs button{padding:6px 14px; border-radius:20px; border:1px solid #333; background:transparent; color:#fff; cursor:pointer; font-size:13px}
-.gallery-tabs button.active{background:#fff; color:#000}
-.gallery-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:10px}
-.gallery-grid img{width:100%; height:140px; object-fit:cover; border-radius:8px; border:1px solid #222}
-.rules-link{display:inline-block; margin-top:12px; color:#fff; text-decoration:underline; font-size:13px}
-</style>
-</head>
-<body>
-<div class="book-shell">
-<aside class="book-panel">
-<div class="top">
-<span class="brand-mark">{{ studio_name }}</span>
-<div class="location">{{ location }}</div>
-<p class="tagline">{{ tagline }}</p>
-<div class="meta-list">
-<div class="meta-row"><span>Session length</span><strong id="leftDurationText">Flexible</strong></div>
-<div class="meta-row"><span>Booking window</span><strong>next {{ days_ahead }} days</strong></div>
-<div class="meta-row"><span>Space</span><strong id="leftResourceText">Daylight Studio</strong></div>
-</div>
-<div class="duration-wrap">
-<label>Choose Space</label>
-<div class="resource-wrap">
-{% for rid, r in resources.items() %}
-<div class="resource-card {% if loop.first %}active{% endif %}" data-resource="{{ rid }}" onclick="selectResource('{{ rid }}')">
-<div style="font-size:18px">{{ r.icon }}</div>
-<div class="r-name">{{ r.name }}</div>
-<div class="r-price">{{ r.price }}<br>{{ r.desc }}</div>
-</div>
-{% endfor %}
-</div>
-</div>
-<div class="duration-wrap">
-<label for="durationSelect">Choose duration</label>
-<select id="durationSelect">
-<option value="60">1 Hour</option>
-<option value="120">2 Hours</option>
-<option value="180">3 Hours</option>
-<option value="300">Half Day (5 Hours)</option>
-<option value="600">Full Day (10 Hours)</option>
-</select>
-</div>
-<a href="/rules" class="rules-link">📜 View Studio Rules & Gallery</a>
-</div>
-<div class="bottom">Pick space + duration, then slot on right. Studio & Meeting Room can be booked same time.</div>
-</aside>
-<main class="book-main">
-<div><h1>Reserve your time</h1><div class="sub">Choose Space → Duration → Date → Slot.</div></div>
+{% extends "base.html" %}
+{% block content %}
+<div class="reserve-wrapper">
+<h1>Reserve your time</h1>
+<p>Choose Space → Duration → Date → Slot.</p>
+
 <div class="booking-grid">
-<div class="calendar-card">
-<div class="cal-header"><div class="cal-nav"><button id="prevMonth" type="button">‹</button><button id="nextMonth" type="button">›</button></div><div class="month-label" id="monthLabel"></div><div style="width:66px"></div></div>
-<div class="cal-weekdays"><div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div></div>
-<div class="cal-days" id="calDays"></div>
+  <div class="left-panel">
+    <div class="space-selector">
+      <label>Space</label>
+      <select id="spaceSelect">
+        <option value="daylight">Daylight Studio</option>
+        <option value="meeting">Meeting Room</option>
+        <option value="studio">Studio</option>
+      </select>
+    </div>
+    <div class="duration-selector">
+      <label>Duration</label>
+      <select id="durationSelect">
+        <option value="1">1 Hour</option>
+        <option value="2">2 Hours</option>
+        <option value="3">3 Hours</option>
+        <option value="6">6 Hours</option>
+        <option value="12">12 Hours</option>
+      </select>
+    </div>
+    <div id="calendar"></div>
+    <div id="fallbackCal" style="margin-top:15px;">
+      <input type="date" id="dateInput">
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <h3 id="selectedDateLabel">Select a date</h3>
+    <div id="slotsContainer">
+      <p class="hint">Please select a date to see available slots</p>
+    </div>
+    <div id="bookingForm" style="display:none; margin-top:20px; border-top:1px solid #ddd; padding-top:15px;">
+      <h4>Confirm Booking</h4>
+      <input type="text" id="custName" placeholder="Your Name" style="width:100%; margin:5px 0; padding:8px;">
+      <input type="tel" id="custPhone" placeholder="Phone Number" style="width:100%; margin:5px 0; padding:8px;">
+      <button id="confirmBtn" style="width:100%; padding:10px; background:#000; color:#fff; border:none; margin-top:10px;">Confirm Booking</button>
+    </div>
+  </div>
 </div>
-<div class="slots-card"><h2 id="slotsHeading">Select a date</h2><div id="slotsBody"><div class="empty-note">Pick a date to see open times.</div></div></div>
 </div>
-{% if gallery %}
-<div class="gallery-section">
-<h2 style="font-size:18px; margin-bottom:10px;">Gallery</h2>
-<div class="gallery-tabs">
-<button class="active" onclick="showGallery('studio', this)">📸 Studio</button>
-<button onclick="showGallery('meeting', this)">💼 Meeting</button>
-<button onclick="showGallery('rules', this)">📜 Rules</button>
-</div>
-<div id="gal-studio" class="gallery-grid">{% for img in gallery.studio %}<img src="{{ url_for('static', filename=img) }}">{% else %}<div class="empty-note">Upload to static/images/studio/</div>{% endfor %}</div>
-<div id="gal-meeting" class="gallery-grid" style="display:none">{% for img in gallery.meeting %}<img src="{{ url_for('static', filename=img) }}">{% else %}<div class="empty-note">Upload to static/images/meeting/</div>{% endfor %}</div>
-<div id="gal-rules" class="gallery-grid" style="display:none">{% for img in gallery.rules %}<img src="{{ url_for('static', filename=img) }}">{% else %}<div class="empty-note">Upload to static/images/rules/</div>{% endfor %}</div>
-</div>
-{% endif %}
-</main>
-</div>
-<div class="modal-overlay" id="modalOverlay" style="display:none;"><div class="modal-card" id="modalCard"></div></div>
+
+<style>
+.booking-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+.slot{padding:10px; margin:5px 0; border:1px solid #ccc; cursor:pointer; border-radius:5px;}
+.slot.available:hover{background:#f0f0f0;}
+.slot.booked{background:#ffdddd; color:#999; cursor:not-allowed;}
+.slot.selected{background:#000; color:#fff;}
+</style>
+
 <script>
-const DAYS_AHEAD={{ days_ahead }}; const DEFAULT_SESSION={{ session_length }}; const RESOURCES={{ resources|tojson }};
-let viewYear,viewMonth,selectedDateStr=null,selectedDuration=parseInt(localStorage.getItem('deven_duration')||DEFAULT_SESSION||60);
-let selectedResource=localStorage.getItem('deven_resource')||'daylight_studio';
-const today=new Date(); viewYear=today.getFullYear(); viewMonth=today.getMonth();
-const monthLabelEl=document.getElementById('monthLabel'),calDaysEl=document.getElementById('calDays'),slotsHeading=document.getElementById('slotsHeading'),slotsBody=document.getElementById('slotsBody'),durationSelect=document.getElementById('durationSelect'),leftDurationText=document.getElementById('leftDurationText');
-durationSelect.value=selectedDuration; updateLeftText(); updateResourceUI();
-function selectResource(rid){selectedResource=rid; localStorage.setItem('deven_resource',rid); updateResourceUI(); if(selectedDateStr) loadSlots(selectedDateStr);}
-function updateResourceUI(){document.querySelectorAll('.resource-card').forEach(c=>c.classList.toggle('active',c.dataset.resource===selectedResource)); const r=RESOURCES[selectedResource]; if(r) document.getElementById('leftResourceText').textContent=r.name+' - '+r.price;}
-function showGallery(which,btn){document.querySelectorAll('.gallery-grid').forEach(g=>g.style.display='none'); document.getElementById('gal-'+which).style.display='grid'; document.querySelectorAll('.gallery-tabs button').forEach(b=>b.classList.remove('active')); btn.classList.add('active');}
-function pad(n){return n.toString().padStart(2,'0');} function fmtDate(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`;} function toDateOnly(dt){return new Date(dt.getFullYear(),dt.getMonth(),dt.getDate());}
-function updateLeftText(){const map={60:'1 Hour',120:'2 Hours',180:'3 Hours',300:'Half Day',600:'Full Day'}; leftDurationText.textContent=map[selectedDuration]||`${selectedDuration} min`;}
-function addMinutes(timeStr,mins){const[h,m]=timeStr.split(':').map(Number); let total=h*60+m+mins; let nh=Math.floor(total/60)%24; let nm=total%60; return `${pad(nh)}:${pad(nm)}`;}
-function renderCalendar(){const monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"]; monthLabelEl.textContent=`${monthNames[viewMonth]} ${viewYear}`; const firstDay=new Date(viewYear,viewMonth,1); const startWeekday=firstDay.getDay(); const daysInMonth=new Date(viewYear,viewMonth+1,0).getDate(); const todayOnly=toDateOnly(new Date()); const maxDate=new Date(todayOnly); maxDate.setDate(maxDate.getDate()+DAYS_AHEAD); calDaysEl.innerHTML=''; for(let i=0;i<startWeekday;i++){const cell=document.createElement('div'); cell.className='cal-day empty'; calDaysEl.appendChild(cell);} for(let d=1;d<=daysInMonth;d++){const cellDate=new Date(viewYear,viewMonth,d); const cell=document.createElement('div'); cell.className='cal-day'; cell.textContent=d; const dateStr=fmtDate(viewYear,viewMonth,d); const disabled=cellDate<todayOnly||cellDate>maxDate; if(disabled){cell.classList.add('disabled');} else{cell.addEventListener('click',()=>selectDate(dateStr,cell));} if(cellDate.getTime()===todayOnly.getTime()){cell.classList.add('today');} if(dateStr===selectedDateStr){cell.classList.add('selected');} calDaysEl.appendChild(cell);} document.getElementById('prevMonth').disabled=(viewYear===todayOnly.getFullYear()&&viewMonth===todayOnly.getMonth());}
-function selectDate(dateStr,cellEl){selectedDateStr=dateStr; document.querySelectorAll('.cal-day.selected').forEach(el=>el.classList.remove('selected')); if(cellEl) cellEl.classList.add('selected'); loadSlots(dateStr);}
-function loadSlots(dateStr){const niceDate=new Date(dateStr+'T00:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}); const rName=RESOURCES[selectedResource]?.name||selectedResource; slotsHeading.textContent=`${niceDate} · ${rName} · ${selectedDuration/60}h`; slotsBody.innerHTML='<div class="empty-note">Loading…</div>'; fetch(`/api/availability?date=${dateStr}&duration=${selectedDuration}&resource=${selectedResource}`).then(r=>r.json()).then(data=>{if(!data.bookable||!data.slots.length){slotsBody.innerHTML='<div class="empty-note">No sessions available.</div>'; return;} const grid=document.createElement('div'); grid.className='slots-grid'; data.slots.forEach(slot=>{const end=addMinutes(slot.start,selectedDuration); const btn=document.createElement('button'); btn.type='button'; btn.className='slot-btn'+(slot.available?'':' taken'); btn.textContent=`${formatTime(slot.start)} - ${formatTime(end)}`; if(slot.available){btn.addEventListener('click',()=>openBookingModal(dateStr,{start:slot.start,end:end},niceDate));} else{btn.disabled=true;} grid.appendChild(btn);}); slotsBody.innerHTML=''; slotsBody.appendChild(grid);}).catch(()=>{slotsBody.innerHTML='<div class="empty-note">Couldn\'t load.</div>';});}
-function formatTime(hhmm){const[h,m]=hhmm.split(':').map(Number); const d=new Date(); d.setHours(h,m,0,0); return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
-const overlay=document.getElementById('modalOverlay'),modalCard=document.getElementById('modalCard'); function closeModal(){overlay.style.display='none'; modalCard.innerHTML='';} overlay.addEventListener('click',e=>{if(e.target===overlay) closeModal();});
-function openBookingModal(dateStr,slot,niceDate){const rName=RESOURCES[selectedResource]?.name||selectedResource; modalCard.innerHTML=`<h3>Confirm - ${rName}</h3><div class="slot-summary">${niceDate} · ${formatTime(slot.start)} – ${formatTime(slot.end)} (${selectedDuration/60}h)</div><form id="bookForm"><div class="field"><label>Full name</label><input type="text" name="name" required></div><div class="field"><label>Email</label><input type="email" name="email" required></div><div class="field"><label>Phone</label><input type="tel" name="phone"></div><div class="field"><label>Notes</label><textarea name="notes"></textarea></div><input type="hidden" name="duration" value="${selectedDuration}"><input type="hidden" name="resource" value="${selectedResource}"><div class="modal-actions"><button type="submit" class="btn btn-primary">Confirm booking</button><button type="button" class="btn btn-ghost" id="cancelModalBtn">Cancel</button></div><div class="form-error" id="formError" style="display:none;"></div></form>`; overlay.style.display='flex'; document.getElementById('cancelModalBtn').addEventListener('click',closeModal); document.getElementById('bookForm').addEventListener('submit',e=>{e.preventDefault(); submitBooking(dateStr,slot,niceDate,e.target);});}
-function submitBooking(dateStr,slot,niceDate,formEl){const submitBtn=formEl.querySelector('button[type="submit"]'); submitBtn.disabled=true; submitBtn.textContent='Booking…'; const errorEl=document.getElementById('formError'); errorEl.style.display='none'; const payload={date:dateStr,start:slot.start,end:slot.end,duration:selectedDuration,resource:selectedResource,name:formEl.name.value,email:formEl.email.value,phone:formEl.phone.value,notes:formEl.notes.value,}; fetch('/api/book',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(async r=>{const data=await r.json(); if(!r.ok){throw new Error(data.error||'Error');} showConfirmation(niceDate,slot); loadSlots(dateStr);}).catch(err=>{errorEl.textContent=err.message; errorEl.style.display='block'; submitBtn.disabled=false; submitBtn.textContent='Confirm booking';});}
-function showConfirmation(niceDate,slot){const rName=RESOURCES[selectedResource]?.name||selectedResource; modalCard.innerHTML=`<div class="confirm-card"><div class="mark">✓</div><h3>Booked - ${rName}</h3><p>${niceDate}<br>${formatTime(slot.start)} – ${formatTime(slot.end)}<br><small>${selectedDuration/60} hour(s)</small></p><div class="modal-actions" style="justify-content:center;"><button type="button" class="btn btn-primary" id="doneBtn">Done</button></div></div>`; document.getElementById('doneBtn').addEventListener('click',closeModal);}
-document.getElementById('prevMonth').addEventListener('click',()=>{viewMonth--; if(viewMonth<0){viewMonth=11; viewYear--;} renderCalendar();});
-document.getElementById('nextMonth').addEventListener('click',()=>{viewMonth++; if(viewMonth>11){viewMonth=0; viewYear++;} renderCalendar();});
-durationSelect.addEventListener('change',()=>{selectedDuration=parseInt(durationSelect.value); localStorage.setItem('deven_duration',selectedDuration); updateLeftText(); if(selectedDateStr) loadSlots(selectedDateStr);});
-renderCalendar();
+let selectedDate = null;
+let selectedSlot = null;
+
+function loadSlots(){
+  if(!selectedDate) return;
+  const space = document.getElementById('spaceSelect').value;
+  const duration = document.getElementById('durationSelect').value;
+  const label = document.getElementById('selectedDateLabel');
+  label.innerText = selectedDate + ' · ' + space + ' · ' + duration + 'h';
+  const container = document.getElementById('slotsContainer');
+  container.innerHTML = '<p>Loading slots...</p>';
+
+  fetch(`/api/slots?date=${selectedDate}&space=${space}&duration=${duration}`)
+   .then(r => r.json())
+   .then(data => {
+      container.innerHTML = '';
+      if(data.error){
+        container.innerHTML = `<p style="color:red">${data.error}</p>`;
+        return;
+      }
+      if(!data.slots || data.slots.length === 0){
+        container.innerHTML = '<p>No slots available for this duration</p>';
+        return;
+      }
+      data.slots.forEach(slot => {
+        const div = document.createElement('div');
+        div.className = 'slot ' + (slot.available? 'available' : 'booked');
+        div.innerText = slot.label + (slot.available? '' : ' (Booked)');
+        if(slot.available){
+          div.onclick = () => {
+            document.querySelectorAll('.slot').forEach(s=>s.classList.remove('selected'));
+            div.classList.add('selected');
+            selectedSlot = slot;
+            document.getElementById('bookingForm').style.display = 'block';
+          };
+        }
+        container.appendChild(div);
+      });
+    })
+   .catch(err => {
+      console.error(err);
+      container.innerHTML = "<p>Couldn't load. Please try again.</p>";
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const dateInput = document.getElementById('dateInput');
+  dateInput.min = new Date().toISOString().split('T')[0];
+  dateInput.onchange = (e) => {
+    selectedDate = e.target.value;
+    loadSlots();
+  };
+
+  // Calendar click ke liye - agar aapka calendar library date select karta hai to
+  window.setSelectedDate = function(dateStr){
+    selectedDate = dateStr;
+    dateInput.value = dateStr;
+    loadSlots();
+  };
+
+  document.getElementById('spaceSelect').onchange = loadSlots;
+  document.getElementById('durationSelect').onchange = loadSlots;
+
+  document.getElementById('confirmBtn').onclick = () => {
+    const name = document.getElementById('custName').value;
+    const phone = document.getElementById('custPhone').value;
+    if(!name ||!phone){ alert('Name and Phone required'); return; }
+    if(!selectedSlot){ alert('Select a slot'); return; }
+    fetch('/api/book', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        space: document.getElementById('spaceSelect').value,
+        date: selectedDate,
+        start_time: selectedSlot.start,
+        end_time: selectedSlot.end,
+        duration: document.getElementById('durationSelect').value,
+        name, phone
+      })
+    }).then(r=>r.json()).then(res=>{
+      if(res.success){ alert('Booked Successfully!'); location.reload(); }
+      else alert(res.message);
+    });
+  };
+});
 </script>
-</body>
-</html>
+{% endblock %}
