@@ -1,14 +1,11 @@
 import os
 import requests
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
 
-# YAHI AAPKA NAYA PERMANENT DATABASE HAI
+# NAYA DATABASE - FINAL
 NPOINT_URL = "https://api.npoint.io/e52209239c5687bad3a9"
-
 ADMIN_PASSWORD = "TheDeven@2026!"
 
 def get_bookings():
@@ -55,17 +52,6 @@ def api_login():
     if data.get('password') == ADMIN_PASSWORD:
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
-
-@app.route('/api/delete', methods=['POST'])
-def api_delete():
-    data = request.json
-    index = data.get('index')
-    bookings = get_bookings()
-    if 0 <= index < len(bookings):
-        bookings.pop(index)
-        save_bookings(bookings)
-        return jsonify({"success": True})
-    return jsonify({"success": False}), 400
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
