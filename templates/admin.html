@@ -1,39 +1,16 @@
 {% extends "base.html" %}
 {% block head %}
-<style>
-.wrap{max-width:1100px;margin:0 auto;padding:20px}
-h1{font-family:Fraunces,serif;font-size:32px}
-table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;margin-top:16px}
-th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}
-th{background:#0e7a8c;color:white}
-tr:hover{background:#f9fafb}
-.badge{background:#e6f4f6;color:#0e7a8c;padding:4px 8px;border-radius:6px;font-size:12px}
-</style>
+<style>.wrap{max-width:1100px;margin:0 auto;padding:20px}table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;margin-top:16px}th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}th{background:#0e7a8c;color:white}</style>
 {% endblock %}
 {% block content %}
 <div class="wrap">
-<h1>Admin - Bookings</h1>
-<p style="color:#6b7280">Total bookings: {{ bookings|length }}</p>
-
+<h1 style="font-family:Fraunces,serif">Admin - Bookings <a href="/admin/logout" style="float:right;font-size:14px;color:red">Logout</a></h1>
+<p>Total: {{ bookings|length }}</p>
 {% if bookings %}
-<table>
-<tr><th>Date</th><th>Space</th><th>Slot</th><th>Name</th><th>Phone</th><th>Email</th></tr>
-{% for b in bookings %}
-<tr>
-<td>{{ b.date }}</td>
-<td><span class="badge">{{ b.space }}</span></td>
-<td>{{ b.start }} ({{ b.duration }}hr)</td>
-<td>{{ b.name }}</td>
-<td>{{ b.phone }}</td>
-<td>{{ b.email }}</td>
-</tr>
-{% endfor %}
+<table><tr><th>Date</th><th>Space</th><th>Slot</th><th>Name</th><th>Phone</th><th>Email</th></tr>
+{% for b in bookings %}<tr><td>{{ b.date }}</td><td>{{ b.space }}</td><td>{{ b.start }} ({{ b.duration }}hr)</td><td>{{ b.name }}</td><td>{{ b.phone }}</td><td>{{ b.email }}</td></tr>{% endfor %}
 </table>
-{% else %}
-<p style="margin-top:20px;color:#6b7280">Abhi koi booking nahi hai. Booking page se test booking karo.</p>
-{% endif %}
-
-<br><br>
-<a href="/book" style="color:#0e7a8c;font-weight:600">← Back to Booking</a>
+{% else %}<p>No bookings yet</p>{% endif %}
+<br><a href="/book">← Back to Booking</a>
 </div>
 {% endblock %}
