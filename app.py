@@ -1,126 +1,72 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-from datetime import datetime
 import os
 import requests
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 
 app = Flask(__name__)
-app.secret_key = "the-deven-final-permanent-2026"
+CORS(app)
 
-NPOINT_ID = "49e07bd08d8c357bc8a3"
-NPOINT_URL = f"https://api.npoint.io/{NPOINT_ID}"
+# YAHI AAPKA NAYA PERMANENT DATABASE HAI
+NPOINT_URL = "https://api.npoint.io/e52209239c5687bad3a9"
 
-ADMIN_PASS = "TheDeven@2026!"
-START, END = 9, 21
+ADMIN_PASSWORD = "TheDeven@2026!"
 
-def load_bookings():
+def get_bookings():
     try:
         r = requests.get(NPOINT_URL, timeout=10)
         if r.status_code == 200:
             data = r.json()
             if isinstance(data, list):
                 return data
-    except Exception as e:
-        print(f"Load error: {e}")
-    return []
-
-def save_bookings(data):
-    try:
-        requests.post(NPOINT_URL, json=data, timeout=15)
-    except Exception as e:
-        print(f"Save error: {e}")
-
-@app.route("/")
-@app.route("/book")
-def book_page():
-    return render_template("book.html")
-
-@app.route("/book", methods=["POST"])
-def book_submit():
-    space = request.form.get("space", "Daylight Studio")
-    duration = int(request.form.get("duration", 1))
-    date = request.form.get("date")
-    slot = request.form.get("slot")
-    name = request.form.get("name")
-    phone = request.form.get("phone")
-    email = request.form.get("email")
-
-    bookings = load_bookings()
-    ns = int(slot.split(":")[0])
-    ne = ns + duration
-
-    for b in bookings:
-        if b["date"] == date and b["space"] == space:
-            bs = int(b["start"].split(":")[0])
-            be = bs + int(b["duration"])
-            if not (ne <= bs or ns >= be):
-                return "<h2 style='text-align:center;margin-top:100px'>Slot Already Booked!<br><br><a href='/book'>Go Back</a></h2>"
-
-    bookings.append({
-        "date": date, "space": space, "start": slot,
-        "duration": duration, "name": name,
-        "phone": phone, "email": email,
-        "created": datetime.now().isoformat()
-    })
-    save_bookings(bookings)
-    return f"<h2 style='text-align:center;margin-top:100px;font-family:serif'>Booking Confirmed!<br>{name} - {space}<br>{date} at {slot} for {duration}hr<br><br><a href='/book'>Done</a></h2>"
-
-@app.route("/api/slots")
-def api_slots():
-    date = request.args.get("date", "")
-    space = request.args.get("space", "Daylight Studio")
-    try:
-        duration = int(request.args.get("duration", 1))
+        return []
     except:
-        duration = 1
-    if not date:
-        return jsonify({"slots": []})
+        return []
 
-    bookings_live = load_bookings()
-    last_start = END - duration
-    all_slots = []
-    for h in range(START, last_start + 1):
-        if duration == 12 and h!= 9: continue
-        if duration == 6 and h not in [9, 15]: continue
-        s = f"{h:02d}:00"
-        e = f"{h+duration:02d}:00"
-        all_slots.append({"start": s, "end": e, "label": f"{s} - {e}", "value": s})
+def save_bookings(bookings):
+    try:
+        requests.post(NPOINT_URL, json=bookings, timeout=10)
+        return True
+    except:
+        return False
 
-    avail = []
-    for sl in all_slots:
-        ss = int(sl["start"].split(":")[0])
-        se = ss + duration
-        conflict = False
-        for b in bookings_live:
-            if b["date"] == date and b["space"] == space:
-                bs = int(b["start"].split(":")[0])
-                be = bs + int(b["duration"])
-                if not (se <= bs or ss >= be):
-                    conflict = True
-                    break
-        if not conflict:
-            avail.append(sl)
-    return jsonify({"slots": avail})
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-@app.route("/admin/login", methods=["GET", "POST"])
-def admin_login():
-    if request.method == "POST":
-        if request.form.get("password") == ADMIN_PASS:
-            session["is_admin"] = True
-            return redirect("/admin")
-        return render_template("admin_login.html", error="Galat Password!")
-    return render_template("admin_login.html")
-
-@app.route("/admin")
+@app.route('/admin')
 def admin():
-    if not session.get("is_admin"):
-        return redirect(url_for("admin_login"))
-    data = load_bookings()
-    return render_template("admin.html", bookings=data[::-1])
+    return render_template('admin.html')
 
-@app.route("/admin/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("admin_login"))
+@app.route('/api/bookings', methods=['GET'])
+def api_get():
+    return jsonify(get_bookings())
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+@app.route('/api/book', methods=['POST'])
+def api_book():
+    data = request.json
+    bookings = get_bookings()
+    bookings.append(data)
+    save_bookings(bookings)
+    return jsonify({"success": True})
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json
+    if data.get('password') == ADMIN_PASSWORD:
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+@app.route('/api/delete', methods=['POST'])
+def api_delete():
+    data = request.json
+    index = data.get('index')
+    bookings = get_bookings()
+    if 0 <= index < len(bookings):
+        bookings.pop(index)
+        save_bookings(bookings)
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 400
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
