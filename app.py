@@ -1,13 +1,14 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = "eleven-studio-2025"
+app.secret_key = "eleven-studio-2025-final"
 
+BOOKINGS = []
 SPACES = ["Daylight Studio", "Meeting Room"]
-BOOKINGS = [] # Render par file error se bachne ke liye memory me rakha hai
 START, END = 9, 21
+ADMIN_PASS = "Eleven@2025" # <-- Aapka admin password
 
 @app.route("/", methods=["GET", "POST"])
 @app.route("/book", methods=["GET", "POST"])
@@ -21,35 +22,32 @@ def book():
             name = request.form.get("name")
             phone = request.form.get("phone")
             email = request.form.get("email")
-
-            # overlap check
             ns = int(slot.split(":")[0]); ne = ns + duration
             for b in BOOKINGS:
                 if b["date"] == date and b["space"] == space:
                     bs = int(b["start"].split(":")[0]); be = bs + int(b["duration"])
                     if not (ne <= bs or ns >= be):
-                        return f"<h2>Slot Already Booked!</h2><p>{space} {date} {slot} already taken</p><a href='/book'>Go Back</a>"
-
-            BOOKINGS.append({"date": date, "space": space, "start": slot, "duration": duration, "name": name, "phone": phone, "email": email, "created": datetime.now().isoformat()})
-            return f"<h2>Booking Confirmed!</h2><p>Thank you {name}, {space} booked on {date} at {slot} for {duration}hr</p><a href='/book'>Book Another</a>"
+                        return f"<h2>Already Booked</h2><a href='/book'>Back</a>"
+            BOOKINGS.append({"date": date, "space": space, "start": slot, "duration": duration, "name": name, "phone": phone, "email": email})
+            return f"<h2 style='font-family:serif;text-align:center;margin-top:100px'>Booking Confirmed for {name}!<br><br>{space} - {date} - {slot}<br><br><a href='/book'>OK</a></h2>"
         except Exception as e:
-            return f"<h2>Error: {e}</h2><a href='/book'>Go Back</a>"
-
+            return f"Error {e} <a href='/book'>Back</a>"
     return render_template("book.html")
 
 @app.route("/api/slots")
 def api_slots():
     date = request.args.get("date", "")
     space = request.args.get("space", "Daylight Studio")
-    duration = int(request.args.get("duration", 1))
+    try: duration = int(request.args.get("duration", 1))
+    except: duration = 1
     if not date: return jsonify({"slots": []})
     last = END - duration
-    all_slots = []
+    slots = []
     for h in range(START, last + 1):
         s = f"{h:02d}:00"; e = f"{h+duration:02d}:00"
-        all_slots.append({"start": s, "end": e, "label": f"{s} - {e}", "time": s, "value": s})
+        slots.append({"start": s, "end": e, "label": f"{s} - {e}", "value": s})
     avail = []
-    for sl in all_slots:
+    for sl in slots:
         ss = int(sl["start"].split(":")[0]); se = ss + duration; conf = False
         for b in BOOKINGS:
             if b["date"] == date and b["space"] == space:
@@ -58,9 +56,26 @@ def api_slots():
         if not conf: avail.append(sl)
     return jsonify({"slots": avail})
 
+# --- ADMIN WITH PASSWORD ---
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASS:
+            session["admin"] = True
+            return redirect(url_for("admin"))
+        return render_template("admin_login.html", error="Wrong password")
+    return render_template("admin_login.html")
+
 @app.route("/admin")
 def admin():
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
     return render_template("admin.html", bookings=BOOKINGS[::-1])
+
+@app.route("/admin/logout")
+def logout():
+    session.pop("admin", None)
+    return redirect(url_for("admin_login"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
