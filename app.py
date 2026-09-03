@@ -4,16 +4,18 @@ from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-# FINAL PERMANENT DATABASE - kabhi change mat karna
 NPOINT_URL = "https://api.npoint.io/e52209239c5687bad3a9"
 ADMIN_PASSWORD = "TheDeven@2026!"
 
 def get_bookings():
     try:
         r = requests.get(NPOINT_URL, timeout=15)
-        return r.json() if r.status_code == 200 and isinstance(r.json(), list) else []
+        if r.status_code == 200:
+            data = r.json()
+            return data if isinstance(data, list) else []
     except:
-        return []
+        pass
+    return []
 
 def save_bookings(data):
     try:
@@ -23,11 +25,17 @@ def save_bookings(data):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"<h1>The Deven Live ✅</h1><p>Template error: {e}</p><p>Folder 'templates' check karo</p>"
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html')
+    try:
+        return render_template('admin.html')
+    except Exception as e:
+        return f"<h1>Admin Live ✅</h1><p>Error: {e}</p>"
 
 @app.route('/api/bookings', methods=['GET'])
 def api_get():
@@ -36,20 +44,20 @@ def api_get():
 @app.route('/api/book', methods=['POST'])
 def api_book():
     bookings = get_bookings()
-    bookings.append(request.json)
+    bookings.append(request.get_json())
     save_bookings(bookings)
     return jsonify({"success": True})
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    if request.json.get('password') == ADMIN_PASSWORD:
+    if request.get_json().get('password') == ADMIN_PASSWORD:
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
 @app.route('/api/delete', methods=['POST'])
 def api_delete():
     try:
-        idx = int(request.json.get('index', -1))
+        idx = int(request.get_json().get('index', -1))
         bookings = get_bookings()
         bookings.pop(idx)
         save_bookings(bookings)
